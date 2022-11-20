@@ -14,9 +14,13 @@ if __name__ == "__main__":
         images_path = args.images_path
         image_files = os.listdir(images_path)
         images_path = [images_path+f'/{image_file}' for image_file in image_files]
-        inference_batch = prepare_batch_for_inference(images_path)
+        
+        # use current working directory as base dir
+        base_dir = os.getcwd()
+        
+        inference_batch = prepare_batch_for_inference(images_path, base_dir)
         context = {"model_dir": args.model_path}
-        handle(inference_batch,context)
+        handle(inference_batch,context,base_dir)
     except Exception as err:
         os.makedirs('log', exist_ok=True)
         logging.basicConfig(filename='log/error_output.log', level=logging.ERROR,

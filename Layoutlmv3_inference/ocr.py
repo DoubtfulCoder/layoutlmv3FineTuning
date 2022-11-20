@@ -1,14 +1,14 @@
 import os
 import pandas as pd
 
-def run_tesseract_on_image(image_path):  # -> tsv output path
+def run_tesseract_on_image(image_path, base_path):  # -> tsv output path
   image_name = os.path.basename(image_path)
   image_name = image_name[:image_name.find('.')]
   error_code = os.system(f'''
-  tesseract "{image_path}" "/content/{image_name}" -l eng tsv
+  tesseract "{image_path}" "{base_path}/content/{image_name}" -l eng tsv
   ''')
   if not error_code:
-    return f"/content/{image_name}.tsv"
+    return f"{base_path}/content/{image_name}.tsv"
   else:
     raise ValueError('Tesseract OCR Error please verify image format PNG,JPG,JPEG')
 
@@ -29,11 +29,11 @@ def clean_tesseract_output(tsv_output_path):
   return words
 
 
-def prepare_batch_for_inference(image_paths):
+def prepare_batch_for_inference(image_paths, base_path):
   # tesseract_outputs is a list of paths
   inference_batch = dict()
   tesseract_outputs = [run_tesseract_on_image(
-      image_path) for image_path in image_paths]
+      image_path, base_path) for image_path in image_paths]
   # clean_outputs is a list of lists
   clean_outputs = [clean_tesseract_output(
       tsv_path) for tsv_path in tesseract_outputs]

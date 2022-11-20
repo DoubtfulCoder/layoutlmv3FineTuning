@@ -165,7 +165,7 @@ class ModelHandler(object):
             docs.append({f'output': output_spans})
         return [json.dumps(docs, ensure_ascii=False)]
 
-    def handle(self, data, context):
+    def handle(self, data, context, base_path):
         """
         Call preprocess, inference and post-process functions
         :param data: input data
@@ -179,18 +179,18 @@ class ModelHandler(object):
         inference_out_list = json.loads(inference_out)
         flattened_output_list = get_flattened_output(inference_out_list)
         for i, flattened_output in enumerate(flattened_output_list):
-            annotate_image(data['image_path'][i], flattened_output)
+            annotate_image(data['image_path'][i], flattened_output, base_path)
             
 
 
 _service = ModelHandler()
 
 
-def handle(data, context):
+def handle(data, context, base_path):
     if not _service.initialized:
         _service.initialize(context)
 
     if data is None:
         return None
 
-    return _service.handle(data, context)
+    return _service.handle(data, context, base_path)
