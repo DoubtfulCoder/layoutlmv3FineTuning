@@ -28,6 +28,7 @@ def get_flattened_output(docs):
 def annotate_image(image_path, annotation_object, base_path):
   img = None
   image = Image.open(image_path).convert('RGBA')
+  width, height = image.size
   tmp = image.copy()
   label2color = image_label_2_color(annotation_object)
   overlay = Image.new('RGBA', tmp.size, (0, 0, 0)+(0,))
@@ -37,6 +38,9 @@ def annotate_image(image_path, annotation_object, base_path):
   predictions = [span['label'] for span in annotation_object['output']]
   boxes = [span['words'][0]['box'] for span in annotation_object['output']]
   for prediction, box in zip(predictions, boxes):
+      # dont draw box for a box that covers the whole image
+      if box[0] == 0 and box[1] == 0 and box[2] == width and box[3] == height:
+          continue
       draw.rectangle(box, outline=label2color[prediction],
                      width=3, fill=label2color[prediction]+(int(255*0.33),))
       draw.text((box[0] + 10, box[1] - 10), text=prediction,

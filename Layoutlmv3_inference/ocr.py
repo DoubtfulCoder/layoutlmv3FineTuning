@@ -29,6 +29,17 @@ def clean_tesseract_output(tsv_output_path):
   return words
 
 
+# pdf parse (faster than OCR) using output from pymupdf
+def parse_pdf(pdf_path, base_path):
+  error_code = os.system(f'''
+  pdftotext "{pdf_path}" "{base_path}/content/pdf.txt"
+  ''')
+  if not error_code:
+    return f"{base_path}/content/pdf.txt"
+  else:
+    raise ValueError('PDF Parse Error please verify PDF format')
+
+
 def prepare_batch_for_inference(image_paths, base_path):
   # tesseract_outputs is a list of paths
   inference_batch = dict()
