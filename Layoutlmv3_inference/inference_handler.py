@@ -206,11 +206,11 @@ class ModelHandler(object):
 
         words = data['words']
         num_words = len(words[0])
-        # number of iters = number of times we can slide windows of 300 words by 100 at a time
-        # e.g. if we have 230 words, we can do 1 iteration, if we have 350 words, we can do 2 iterations,
-        # if we have 450 words, we can do 3 iterations
+        # number of iters = number of times we can slide windows of 300 words by 200 at a time 
+        # (100 word overlap between windows to not miss context)
+        # e.g. if we have 620 words, iters are [0, 300], [200, 500], [400, 620]
         num_iters = max(0, num_words - 300) 
-        num_iters = math.ceil(num_iters / 100) + 1 # divide by 100 and add 1
+        num_iters = math.ceil(num_iters / 200) + 1 # divide by 200 and add 1
 
         start_idx = 0
         for i in range(num_iters):
@@ -246,8 +246,8 @@ class ModelHandler(object):
             new_inference_img_path = f'/content/{image_name}_inference_{i}.jpg'
             os.rename(inference_img_path, new_inference_img_path)
             
-            # slide the window by 100 words
-            start_idx += 100
+            # slide the window by 200 words (100 word overlap with previous window)
+            start_idx += 200
 
         # combine json outputs into one json file
         combined_json = ModelHandler.combine_json_outputs(num_iters)
