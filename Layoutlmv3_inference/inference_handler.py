@@ -211,6 +211,8 @@ class ModelHandler(object):
         # e.g. if we have 620 words, iters are [0, 300], [200, 500], [400, 620]
         num_iters = max(0, num_words - 300) 
         num_iters = math.ceil(num_iters / 200) + 1 # divide by 200 and add 1
+        print('num iters = ', num_iters)
+        print('base path', base_path)
 
         start_idx = 0
         for i in range(num_iters):
@@ -230,6 +232,8 @@ class ModelHandler(object):
             result = self.postprocess(inference_output)[0]
             
             # export inference output to json
+            print(f'Exporting inference output to json file LayoutlMV3InferenceOutput_{i}.json')
+            # print(result)
             with open(f'LayoutlMV3InferenceOutput_{i}.json', 'w') as inf_out:
                 inf_out.write(result)
 
@@ -237,13 +241,13 @@ class ModelHandler(object):
             inference_out_list = json.loads(result)
             flattened_output_list = get_flattened_output(inference_out_list)
             for j, flattened_output in enumerate(flattened_output_list):
-              annotate_image(data['image_path'][j], flattened_output)
+              annotate_image(data['image_path'][j], flattened_output, base_path)
 
             # rename inference image name to add number of iteration
             image_name = os.path.basename(image_path[0])
             image_name = image_name[:image_name.find('.')]
-            inference_img_path = f'/content/{image_name}_inference.jpg'
-            new_inference_img_path = f'/content/{image_name}_inference_{i}.jpg'
+            inference_img_path = f'{base_path}/{image_name}_inference.jpg'
+            new_inference_img_path = f'{base_path}/{image_name}_inference_{i}.jpg'
             os.rename(inference_img_path, new_inference_img_path)
             
             # slide the window by 200 words (100 word overlap with previous window)
@@ -251,6 +255,7 @@ class ModelHandler(object):
 
         # combine json outputs into one json file
         combined_json = ModelHandler.combine_json_outputs(num_iters)
+        print('combined json output: ', combined_json[:50])
         with open('LayoutlMV3InferenceOutput.json', 'w') as combined_json_out:
             combined_json_out.write(json.dumps(combined_json, ensure_ascii=False))
 
@@ -258,7 +263,7 @@ class ModelHandler(object):
         # inference_out_list = json.loads(combined_json_output)
         flattened_output_list = get_flattened_output(combined_json)
         for j, flattened_output in enumerate(flattened_output_list):
-          annotate_image(data['image_path'][j], flattened_output)
+          annotate_image(data['image_path'][j], flattened_output, base_path)
 
 
 

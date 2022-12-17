@@ -25,7 +25,7 @@ def get_flattened_output(docs):
   return flattened_output
 
 
-def annotate_image(image_path, annotation_object, base_path):
+def annotate_image(image_path, annotation_object, base_path, param_ending=''):
   img = None
   image = Image.open(image_path).convert('RGBA')
   width, height = image.size
@@ -51,4 +51,5 @@ def annotate_image(image_path, annotation_object, base_path):
 
   image_name = os.path.basename(image_path)
   image_name = image_name[:image_name.find('.')]
-  img.save(f'{base_path}/{image_name}_inference.jpg')
+  print(f'saving to {base_path}/{image_name}_inference{param_ending}.jpg')
+  img.save(f'{base_path}/{image_name}_inference{param_ending}.jpg')
