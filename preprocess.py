@@ -26,8 +26,20 @@ def prepare_examples(examples):
     boxes = examples[boxes_column_name]
     word_labels = examples[label_column_name]
 
+    #   encoding = processor(images, words, boxes=boxes, word_labels=word_labels,
+#                        truncation=True, padding="max_length")
+    
+    # new encoding - uses sliding window
     encoding = processor(images, words, boxes=boxes, word_labels=word_labels,
-                         truncation=True, padding="max_length")
+                        truncation=True, padding="max_length",
+                        max_length=512, stride=128,
+                        return_overflowing_tokens=True,
+                        return_offsets_mapping=True)
+    offset_mapping = encoding.pop("offset_mapping")
+    print("offset_mapping", offset_mapping)
+    overflow_to_sample_mapping = encoding.pop("overflow_to_sample_mapping")  
+    print("overflow_to_sample_mapping", overflow_to_sample_mapping)
+
 
     return encoding
 
