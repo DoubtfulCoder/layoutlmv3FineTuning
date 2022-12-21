@@ -1,15 +1,17 @@
-import pandas as pd
-import numpy as np
-import os
 import argparse
-from datasets.features import ClassLabel
-from transformers import AutoProcessor
-from sklearn.model_selection import train_test_split
-from datasets import Features, Sequence, ClassLabel, Value, Array2D, Array3D, Dataset
-from datasets import Image as Img
-from PIL import Image
-
+import os
 import warnings
+
+import numpy as np
+import pandas as pd
+from datasets import Array2D, Array3D, ClassLabel, Dataset, Features
+from datasets import Image as Img
+from datasets import Sequence, Value
+from datasets.features import ClassLabel
+from PIL import Image
+from sklearn.model_selection import train_test_split
+from transformers import AutoProcessor
+
 warnings.filterwarnings('ignore')
 
 
@@ -19,33 +21,23 @@ def read_text_file(file_path):
 
 
 def prepare_examples(examples):
-  images = examples[image_column_name]
-  words = examples[text_column_name]
-  boxes = examples[boxes_column_name]
-  word_labels = examples[label_column_name]
+    images = examples[image_column_name]
+    words = examples[text_column_name]
+    boxes = examples[boxes_column_name]
+    word_labels = examples[label_column_name]
 
-#   encoding = processor(images, words, boxes=boxes, word_labels=word_labels,
-#                        truncation=True, padding="max_length")
-    
-    
-    # new encoding - uses sliding window
-  encoding = processor(images, words, boxes=boxes, word_labels=word_labels,
-                       truncation=True, padding="max_length",
-                       max_length=512, stride=128,
-                       return_overflowing_tokens=True,
-                       return_offsets_mapping=True)
-  offset_mapping = encoding.pop("offset_mapping")
-  print("offset_mapping", offset_mapping)
-  overflow_to_sample_mapping = encoding.pop("overflow_to_sample_mapping")  
-  print("overflow_to_sample_mapping", overflow_to_sample_mapping)
+    encoding = processor(images, words, boxes=boxes, word_labels=word_labels,
+                         truncation=True, padding="max_length")
 
-  return encoding
+    return encoding
+
 
 def get_zip_dir_name():
     try:
-        os.chdir('/content/data')
+        os.chdir('data')
         dir_list = os.listdir()
         any_file_name = dir_list[0]
+        print(any_file_name)
         zip_dir_name = any_file_name[:any_file_name.find('\\')]
         if all(list(map(lambda x: x.startswith(zip_dir_name), dir_list))):
             return zip_dir_name
@@ -57,7 +49,6 @@ def get_zip_dir_name():
 def filter_out_unannotated(example):
     tags = example['ner_tags']
     return not all([tag == label2id['O'] for tag in tags])
-
 
 
 if __name__ == '__main__':
@@ -72,45 +63,84 @@ if __name__ == '__main__':
     os.makedirs(args.output_path, exist_ok=True)
     files = {}
     zip_dir_name = get_zip_dir_name()
-    if zip_dir_name:
-        files['train_box'] = read_text_file(os.path.join(
-            os.curdir, 'data', f'{zip_dir_name}\\{zip_dir_name}_box.txt'))
-        files['train_image'] = read_text_file(os.path.join(
-            os.curdir, 'data', f'{zip_dir_name}\\{zip_dir_name}_image.txt'))
-        files['train'] = read_text_file(os.path.join(
-            os.curdir, 'data', f'{zip_dir_name}\\{zip_dir_name}.txt'))
-    else:
-        for f in os.listdir():
-            if f.endswith('.txt') and f.find('box') != -1:
-                files['train_box'] = read_text_file(os.path.join(os.curdir, f))
-            elif f.endswith('.txt') and f.find('image') != -1:
-                files['train_image'] = read_text_file(
-                    os.path.join(os.curdir, f))
-            elif f.endswith('.txt') and f.find('labels') == -1:
-                files['train'] = read_text_file(os.path.join(os.curdir, f))
+    print('zip_dir_name', zip_dir_name)
+    # if zip_dir_name:
+    #     files['train_box'] = read_text_file(os.path.join(
+    #         os.curdir, 'data', f'{zip_dir_name}\\{zip_dir_name}_box.txt'))
+    #     files['train_image'] = read_text_file(os.path.join(
+    #         os.curdir, 'data', f'{zip_dir_name}\\{zip_dir_name}_image.txt'))
+    #     files['train'] = read_text_file(os.path.join(
+    #         os.curdir, 'data', f'{zip_dir_name}\\{zip_dir_name}.txt'))
+    # else:
+
+    os.chdir('data')
+    for f in os.listdir():
+        if f.endswith('.txt') and f.find('box') != -1:
+            print('yo')
+            files['train_box'] = read_text_file(os.path.join(os.curdir, f))
+        elif f.endswith('.txt') and f.find('image') != -1:
+            files['train_image'] = read_text_file(
+                os.path.join(os.curdir, f))
+        elif f.endswith('.txt') and f.find('labels') == -1:
+            files['train'] = read_text_file(os.path.join(os.curdir, f))
+    os.chdir('./../')
 
     assert(len(files['train']) == len(files['train_box']))
     assert(len(files['train_box']) == len(files['train_image']))
     assert(len(files['train_image']) == len(files['train']))
 
     images = {}
-    for i, row in enumerate(files['train_image']):
-        if row != '\n':
-            image_name = row.split('\t')[-1]
+    for i, box in enumerate(files['train_image']):
+        if box != '\n':
+            image_name = box.split('\t')[-1]
+            print(image_name)
             images.setdefault(image_name.replace('\n', ''), []).append(i)
 
     words, bboxes, ner_tags, image_path = [], [], [], []
+    # print('files[train', files['train'])
+    print(len(files['train']))
+    print(len(images.items()))
     for image, rows in images.items():
-        words.append([row.split('\t')[0].replace('\n', '')
-                     for row in files['train'][rows[0]:rows[-1]+1]])
-        ner_tags.append([row.split('\t')[1].replace('\n', '')
-                        for row in files['train'][rows[0]:rows[-1]+1]])
-        bboxes.append([box.split('\t')[1].replace('\n', '')
-                      for box in files['train_box'][rows[0]:rows[-1]+1]])
+        # print('len(rows)', len(rows))
+        # if row.find('\t') == -1:
+        #     continue
+        # print(row)
+        # print('rows[0]', rows[0])
+        # print('rows[-1]', rows[-1])
+        # print('row.split', row.split('\t'))
+
+        words_to_append = []
+        ner_tags_to_append = []
+        for box in files['train'][rows[0]:rows[-1] + 1]:
+            box_split = box.split('\t')
+            if len(box.split('\t')) == 2:
+                words_to_append.append(box_split[0].replace('\n', ''))
+                ner_tags_to_append.append(box_split[1].replace('\n', ''))
+        words.append(words_to_append)
+        ner_tags.append(ner_tags_to_append)
+
+        bboxes_to_append = []
+        for box in files['train_box'][rows[0]:rows[-1] + 1]:
+            box_split = box.split('\t')
+            if len(box.split('\t')) == 2:
+                bboxes_to_append.append(box.split('\t')[1].replace('\n', ''))
+
+        bboxes.append(bboxes_to_append)
+
+        # words.append([row.split('\t')[0].replace('\n', '')
+        #              for row in files['train'][rows[0]:rows[-1]+1]])
+        # ner_tags.append([row.split('\t')[1].replace('\n', '')
+        #                 for row in files['train'][rows[0]:rows[-1]+1]])
+        # bboxes.append([box.split('\t')[1].replace('\n', '')
+        #               for box in files['train_box'][rows[0]:rows[-1]+1]])
         if zip_dir_name:
-            image_path.append(f"/content/data/{zip_dir_name}\\{image}")
+            # image_path.append(f"/content/data/{zip_dir_name}\\{image}")
+            image_path.append(f"{zip_dir_name}\\{image}")
         else:
-            image_path.append(f"/content/data/{image}")
+            # image_path.append(f"/content/data/{image}")
+            image_path.append(f"{image}")
+
+    print(words)
 
     labels = list(set([tag for doc_tag in ner_tags for tag in doc_tag]))
     id2label = {v: k for v, k in enumerate(labels)}
@@ -121,10 +151,10 @@ if __name__ == '__main__':
         'tokens': words,
         'bboxes': [[list(map(int, bbox.split())) for bbox in doc] for doc in bboxes],
         'ner_tags': [[label2id[tag] for tag in ner_tag] for ner_tag in ner_tags],
-        'image': [Image.open(path).convert("RGB") for path in image_path]
+        'image': [Image.open('data/' + path).convert("RGB") for path in image_path]
     }
 
-    #raw features
+    # raw features
     features = Features({
         'id': Value(dtype='string', id=None),
         'tokens': Sequence(feature=Value(dtype='string', id=None), length=-1, id=None),
@@ -169,8 +199,6 @@ if __name__ == '__main__':
 #         id2label = {k: v for k, v in enumerate(label_list)}
 #         label2id = {v: k for k, v in enumerate(label_list)}
 #     num_labels = len(label_list)
-
-    
 
     # we need to define custom features for `set_format` (used later on) to work properly
     features = Features({
