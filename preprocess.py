@@ -37,7 +37,7 @@ def get_zip_dir_name():
         os.chdir('data')
         dir_list = os.listdir()
         any_file_name = dir_list[0]
-        print(any_file_name)
+        # print(any_file_name)
         zip_dir_name = any_file_name[:any_file_name.find('\\')]
         if all(list(map(lambda x: x.startswith(zip_dir_name), dir_list))):
             return zip_dir_name
@@ -63,20 +63,10 @@ if __name__ == '__main__':
     os.makedirs(args.output_path, exist_ok=True)
     files = {}
     zip_dir_name = get_zip_dir_name()
-    print('zip_dir_name', zip_dir_name)
-    # if zip_dir_name:
-    #     files['train_box'] = read_text_file(os.path.join(
-    #         os.curdir, 'data', f'{zip_dir_name}\\{zip_dir_name}_box.txt'))
-    #     files['train_image'] = read_text_file(os.path.join(
-    #         os.curdir, 'data', f'{zip_dir_name}\\{zip_dir_name}_image.txt'))
-    #     files['train'] = read_text_file(os.path.join(
-    #         os.curdir, 'data', f'{zip_dir_name}\\{zip_dir_name}.txt'))
-    # else:
 
     os.chdir('data')
     for f in os.listdir():
         if f.endswith('.txt') and f.find('box') != -1:
-            print('yo')
             files['train_box'] = read_text_file(os.path.join(os.curdir, f))
         elif f.endswith('.txt') and f.find('image') != -1:
             files['train_image'] = read_text_file(
@@ -93,22 +83,11 @@ if __name__ == '__main__':
     for i, box in enumerate(files['train_image']):
         if box != '\n':
             image_name = box.split('\t')[-1]
-            print(image_name)
             images.setdefault(image_name.replace('\n', ''), []).append(i)
 
     words, bboxes, ner_tags, image_path = [], [], [], []
-    # print('files[train', files['train'])
-    print(len(files['train']))
-    print(len(images.items()))
+    
     for image, rows in images.items():
-        # print('len(rows)', len(rows))
-        # if row.find('\t') == -1:
-        #     continue
-        # print(row)
-        # print('rows[0]', rows[0])
-        # print('rows[-1]', rows[-1])
-        # print('row.split', row.split('\t'))
-
         words_to_append = []
         ner_tags_to_append = []
         for box in files['train'][rows[0]:rows[-1] + 1]:
@@ -127,20 +106,13 @@ if __name__ == '__main__':
 
         bboxes.append(bboxes_to_append)
 
-        # words.append([row.split('\t')[0].replace('\n', '')
-        #              for row in files['train'][rows[0]:rows[-1]+1]])
-        # ner_tags.append([row.split('\t')[1].replace('\n', '')
-        #                 for row in files['train'][rows[0]:rows[-1]+1]])
-        # bboxes.append([box.split('\t')[1].replace('\n', '')
-        #               for box in files['train_box'][rows[0]:rows[-1]+1]])
+        
         if zip_dir_name:
-            # image_path.append(f"/content/data/{zip_dir_name}\\{image}")
             image_path.append(f"{zip_dir_name}\\{image}")
         else:
-            # image_path.append(f"/content/data/{image}")
             image_path.append(f"{image}")
 
-    print(words)
+    # print(words)
 
     labels = list(set([tag for doc_tag in ner_tags for tag in doc_tag]))
     id2label = {v: k for v, k in enumerate(labels)}
