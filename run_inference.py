@@ -24,7 +24,7 @@ if __name__ == "__main__":
     except Exception as err:
         os.makedirs('log', exist_ok=True)
         logging.basicConfig(filename='log/error_output.log', level=logging.ERROR,
-                            format='%(asctime)s %(levelname)s %(name)s %(message)s')
+                            format= '[%(asctime)s] {%(pathname)s:%(lineno)d} %(levelname)s - %(message)s')
         logger = logging.getLogger(__name__)
         logger.error(err)
 
