@@ -42,7 +42,7 @@ class ModelHandler(object):
         self.model = self.load(self.model_dir)
         self.initialized = True
 
-    def preprocess(self, batch):
+    def preprocess(self, batch, using_lilt=False):
         """
         Transform raw input into model input data.
         :param batch: list of raw requests, should match batch size
@@ -61,6 +61,8 @@ class ModelHandler(object):
                   for box in doc] for i, doc in enumerate(inference_dict['bboxes'])]
         encoded_inputs = processor(
             images, words, boxes=boxes, return_tensors="pt", padding="max_length", truncation=True)
+        if using_lilt:
+            del encoded_inputs['pixel_values']
         self._processed_data = encoded_inputs
         return encoded_inputs
 
@@ -197,7 +199,7 @@ class ModelHandler(object):
 
         return combined_json_output
 
-    def handle(self, data, context, base_path):
+    def handle(self, data, context, base_path, using_lilt=False):
         """
         Call preprocess, inference and post-process functions
         :param data: input data
@@ -227,7 +229,7 @@ class ModelHandler(object):
             new_data = {'words': subset_words, 'bboxes': subset_bboxes, 'image_path': image_path}
             
             # process and run inference
-            model_input = self.preprocess(new_data)
+            model_input = self.preprocess(new_data, using_lilt)
             inference_output = self.inference(model_input)
             result = self.postprocess(inference_output)[0]
             
@@ -273,13 +275,13 @@ class ModelHandler(object):
 _service = ModelHandler()
 
 
-def handle(data, context, base_path):
+def handle(data, context, base_path, using_lilt=False):
     if not _service.initialized:
         _service.initialize(context)
 
     if data is None:
         return None
 
-    return _service.handle(data, context, base_path)
+    return _service.handle(data, context, base_path, using_lilt)
 
 

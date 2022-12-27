@@ -10,6 +10,9 @@ if __name__ == "__main__":
         parser = argparse.ArgumentParser()
         parser.add_argument("--model_path", type=str)
         parser.add_argument("--images_path", type=str)
+        # optional boolean argument to indicate if training lilt
+        parser.add_argument("--using_lilt", type=bool, default=False)
+
         args, _ = parser.parse_known_args()
         images_path = args.images_path
         image_files = os.listdir(images_path)
@@ -20,7 +23,7 @@ if __name__ == "__main__":
         
         inference_batch = prepare_batch_for_inference(images_path, base_dir)
         context = {"model_dir": args.model_path}
-        handle(inference_batch,context,base_dir)
+        handle(inference_batch, context, base_dir, args.using_lilt)
     except Exception as err:
         os.makedirs('log', exist_ok=True)
         logging.basicConfig(filename='log/error_output.log', level=logging.ERROR,
