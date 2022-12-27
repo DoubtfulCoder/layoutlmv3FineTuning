@@ -14,6 +14,14 @@ def run_tesseract_on_image(image_path, base_path):  # -> tsv output path
 
 
 def clean_tesseract_output(tsv_output_path):
+  # replace all " characters with '
+  with open(tsv_output_path, 'r') as f:
+    lines = f.readlines()
+    lines = [line.replace('"', "'") for line in lines]
+  with open(tsv_output_path, 'w') as f:
+    f.writelines(lines)
+
+
   ocr_df = pd.read_csv(tsv_output_path, sep='\t')
   ocr_df = ocr_df.dropna()
   ocr_df = ocr_df.drop(ocr_df[ocr_df.text.str.strip() == ''].index)
