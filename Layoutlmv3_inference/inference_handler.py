@@ -182,14 +182,28 @@ class ModelHandler(object):
         for file in json_outputs:
             output = file[0]['output']
             for entity in output:
-                bbox_1 = entity['words'][0]['box']
-                # check if the entity is already in the combined json output
+                first_word_bbox_1 = entity['words'][0]['box']
+                last_word_bbox_1 = entity['words'][-1]['box']
+                # check if the entity is already in the combined json output 
+                # (last word of entity's bbox is same as last word of an entity already in json)
                 already_exists = False
                 for existing_entity in combined_json_output[0]['output']:
-                    bbox_2 = existing_entity['words'][0]['box']
-                    if bbox_1 == bbox_2:
+                    last_word_bbox_2 = existing_entity['words'][-1]['box']
+                    if last_word_bbox_1 == last_word_bbox_2:
                         already_exists = True
                         break
+                    else:
+                        # check if first word bbox's are equal
+                        # this means the entity is a continuation of an existing entity
+                        first_word_bbox_2 = existing_entity['words'][0]['box']
+                        if first_word_bbox_1 == first_word_bbox_2:
+                            # entity is a continuation of an existing entity
+                            #   -> add the entity's words to the existing entity
+                            existing_entity['words'] = entity['words']
+                            existing_entity['text'] = entity['text']
+                            already_exists = True
+                            break
+
 
                 if not already_exists:
                     combined_json_output[0]['output'].append(entity)
